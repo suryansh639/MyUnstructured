@@ -1,34 +1,39 @@
 streamlit
-unstructured[all-docs]
 pandas
+requests
+python-dateutil
 python-multipart
+
+# Unstructured
+unstructured
+unstructured[all]
+unstructured[all-docs]
+unstructured-inference
+unstructured-client
+
+# OCR & Vision
+pytesseract
+opencv-python
 pillow
+
+# Document Handling
 pypdf
+PyPDF2
 python-docx
-openpyxl
 python-pptx
+openpyxl
+xlsxwriter
 markdown
 lxml
 beautifulsoup4
+pdfplumber
+tabulate
+plotly>=5.15.0
+PyPDF2
 
-# For better PDF processing
-layoutparser
+# ML Frameworks
 torch
 torchvision
 
-# Additional dependencies for various file formats
-tabulate
-plotly>=5.15.0     # For interactive charts
-openpyxl
-xlsxwriter         # For Excel export
-pytesseract
-opencv-python      # For advanced OCR
-torch
-torchvision        # For ML models
-pdfplumber
-
-PyPDF2
-
-requests
-
-python-dateutil
+# Optional PDF layout detection
+layoutparser
