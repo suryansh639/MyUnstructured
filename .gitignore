@@ -1,0 +1,38 @@
+# Streamlit config and machine ID
+.streamlit/config.toml
+.streamlit/machine_id_v4
+
+# Temporary / numeric files
+2
+=5.15.0
+
+# Ignore sensitive files
+.aws/
+.ssh/
+.streamlit/secrets.toml
+.bash_history
+.bashrc
+.bash_logout
+.profile
+.sudo_as_admin_successful
+.viminfo
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+streamlit_env/
+
+# Archives / binaries
+*.zip
+
+# NLTK data
+nltk_data/
+
+# AWS builds
+aws/dist/
+
+aws/
+aws
+
