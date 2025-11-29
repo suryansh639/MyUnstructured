@@ -1,37 +1,5 @@
-# Core
 streamlit
 pandas
 requests
-python-dateutil
-
-# Unstructured
-unstructured
-unstructured[all]
-unstructured[all-docs]
-unstructured-inference
-unstructured-client
-
-# OCR & Vision
-pytesseract
-opencv-python
-pillow
-
-# Document Handling
-pypdf
-python-docx
-python-pptx
-openpyxl
-xlsxwriter
-markdown
-lxml
-beautifulsoup4
-pdfplumber
-tabulate
-PyPDF2
-
-# ML Frameworks
-torch
-torchvision
-
-# Optional PDF layout detection
-layoutparser
+boto3
+plotly

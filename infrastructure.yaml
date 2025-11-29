@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AI-Ready Data Processing SaaS Infrastructure'
+
+Resources:
+  # S3 Bucket for document storage
+  DocumentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-documents'
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldDocuments
+            Status: Enabled
+            ExpirationInDays: 90
+
+  # DynamoDB for usage tracking
+  UsageTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${AWS::StackName}-usage'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: api_key
+          AttributeType: S
+        - AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: api_key
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserIdIndex
+          KeySchema:
+            - AttributeName: user_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  # API Gateway
+  ApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub '${AWS::StackName}-api'
+      ProtocolType: HTTP
+
+  # Lambda for API processing
+  ProcessingLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-processor'
+      Runtime: python3.11
+      Handler: lambda_handler.handler
+      Timeout: 300
+      MemorySize: 3008
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref DocumentBucket
+          USAGE_TABLE: !Ref UsageTable
+          STRIPE_SECRET_KEY: !Ref StripeSecretKey
+
+  # Parameter for Stripe key
+  StripeSecretKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/${AWS::StackName}/stripe-secret'
+      Type: String
+      Value: 'placeholder'
+
+Outputs:
+  ApiEndpoint:
+    Value: !GetAtt ApiGateway.ApiEndpoint
+  BucketName:
+    Value: !Ref DocumentBucket
+  UsageTableName:
+    Value: !Ref UsageTable

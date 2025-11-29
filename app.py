@@ -614,6 +614,14 @@ def create_analytics_dashboard(json_data):
 def main():
     initialize_session_state()
     
+    # Check authentication first
+    if not is_authenticated():
+        show_auth_dialog()
+        return
+    
+    # Show user profile in sidebar
+    show_user_profile_sidebar()
+    
     # Header with gradient
     st.markdown('<h1 class="main-header">🚀 Advanced Document Processing Suite</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Powered by Atlas.ai - Transform any document into structured data</p>', unsafe_allow_html=True)

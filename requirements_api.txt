@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+python-multipart
+stripe
+boto3
+pydantic
+python-jose[cryptography]
+passlib[bcrypt]
+unstructured[all]
+mangum

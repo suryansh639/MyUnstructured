@@ -1,0 +1,32 @@
+{
+  "api_endpoint": {
+    "sensitive": false,
+    "type": "string",
+    "value": "https://i4a8p9jm70.execute-api.us-east-1.amazonaws.com/prod"
+  },
+  "bucket_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "docuai-documents-818515814116"
+  },
+  "cognito_domain": {
+    "sensitive": false,
+    "type": "string",
+    "value": "docuai-prod-qqmhe0eo"
+  },
+  "user_pool_client_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "lq7a32rt0stetm9sfdljnhs3b"
+  },
+  "user_pool_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "us-east-1_ZEs6LnuPt"
+  },
+  "users_table_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "docuai-prod-users"
+  }
+}

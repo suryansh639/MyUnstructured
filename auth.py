@@ -1,93 +1,220 @@
 import streamlit as st
-from streamlit_google_auth import Authenticate
+import requests
 
-def get_authenticator():
-    """Initialize and return authenticator"""
-    return Authenticate(
-        secret_credentials_path=None,
-        cookie_name='doc_processor_auth',
-        cookie_key='random_key_12345',
-        redirect_uri='https://atlas.13-232-91-199.nip.io',
-    )
+# AWS Configuration
+API_ENDPOINT = "https://i4a8p9jm70.execute-api.us-east-1.amazonaws.com/prod"
+USER_POOL_CLIENT_ID = "lq7a32rt0stetm9sfdljnhs3b"
+COGNITO_ENDPOINT = "https://cognito-idp.us-east-1.amazonaws.com/"
+
+def cognito_login(email, password):
+    """Login with AWS Cognito"""
+    try:
+        response = requests.post(
+            COGNITO_ENDPOINT,
+            headers={
+                'Content-Type': 'application/x-amz-json-1.1',
+                'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth'
+            },
+            json={
+                'AuthFlow': 'USER_PASSWORD_AUTH',
+                'ClientId': USER_POOL_CLIENT_ID,
+                'AuthParameters': {
+                    'USERNAME': email,
+                    'PASSWORD': password
+                }
+            }
+        )
+        data = response.json()
+        
+        if 'AuthenticationResult' in data:
+            return data['AuthenticationResult']['IdToken'], None
+        else:
+            return None, data.get('message', 'Login failed')
+    except Exception as e:
+        return None, str(e)
+
+def register_user(email, password, name):
+    """Register new user"""
+    try:
+        response = requests.post(
+            f"{API_ENDPOINT}/v1/register",
+            headers={'Content-Type': 'application/json'},
+            json={'email': email, 'password': password, 'name': name}
+        )
+        data = response.json()
+        return data, None if response.ok else data.get('error', 'Registration failed')
+    except Exception as e:
+        return None, str(e)
+
+def verify_email(email, code):
+    """Verify email with code"""
+    try:
+        response = requests.post(
+            COGNITO_ENDPOINT,
+            headers={
+                'Content-Type': 'application/x-amz-json-1.1',
+                'X-Amz-Target': 'AWSCognitoIdentityProviderService.ConfirmSignUp'
+            },
+            json={
+                'ClientId': USER_POOL_CLIENT_ID,
+                'Username': email,
+                'ConfirmationCode': code
+            }
+        )
+        return response.status_code == 200, None if response.status_code == 200 else 'Invalid code'
+    except Exception as e:
+        return False, str(e)
+
+def get_credits(token):
+    """Get user credits from API"""
+    try:
+        response = requests.get(
+            f"{API_ENDPOINT}/v1/credits",
+            headers={'Authorization': f'Bearer {token}'}
+        )
+        data = response.json()
+        return data.get('credits', 0), data.get('email', ''), data.get('name', '')
+    except Exception as e:
+        return 0, '', ''
+
+def process_document_with_credit(token, file_content, filename):
+    """Process document and automatically deduct credit"""
+    try:
+        import base64
+        base64_file = base64.b64encode(file_content).decode('utf-8')
+        response = requests.post(
+            f"{API_ENDPOINT}/v1/process",
+            headers={
+                'Authorization': f'Bearer {token}',
+                'Content-Type': 'application/json'
+            },
+            json={
+                'file': base64_file,
+                'filename': filename
+            }
+        )
+        data = response.json()
+        
+        # Update credits in session
+        if 'credits_remaining' in data:
+            st.session_state.credits = data['credits_remaining']
+        
+        return data, None
+    except Exception as e:
+        return None, str(e)
 
 def is_authenticated():
-    """Check if user is logged in"""
-    authenticator = get_authenticator()
-    user_info = authenticator.check_authentification()
-    return user_info is not None
-
-def get_user_info():
-    """Get current user information"""
-    authenticator = get_authenticator()
-    return authenticator.check_authentification()
+    """Check if user is authenticated"""
+    return st.session_state.get('authenticated', False)
 
 def show_auth_dialog():
-    """Show authentication dialog as modal"""
-    st.markdown("""
-    <style>
-    .auth-modal {
-        position: fixed;
-        z-index: 9999;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.7);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    .auth-content {
-        background: white;
-        padding: 3rem;
-        border-radius: 20px;
-        text-align: center;
-        max-width: 500px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    }
-    .auth-title {
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 1rem;
-        color: #333;
-    }
-    .auth-subtitle {
-        color: #666;
-        margin-bottom: 2rem;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    """Show login/register/verify dialog"""
+    st.markdown('<h1 style="text-align: center; color: #667eea;">🚀 DocuAI</h1>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; color: #6c757d; font-size: 1.2rem;">Transform Unstructured Documents to AI-Ready Data</p>', unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 2, 1])
+    tab1, tab2, tab3 = st.tabs(["🔐 Login", "📝 Register", "✉️ Verify Email"])
     
-    with col2:
-        st.markdown('<div class="auth-content">', unsafe_allow_html=True)
-        st.markdown("### Get more done, Everyday.")
-        st.markdown("Create your account to get started")
-        st.markdown("---")
-        
-        authenticator = get_authenticator()
-        authenticator.login()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-
-def logout():
-    """Logout current user"""
-    authenticator = get_authenticator()
-    authenticator.logout()
+    with tab1:
+        st.subheader("Login to Your Account")
+        with st.form("login_form"):
+            email = st.text_input("📧 Email", placeholder="your@email.com")
+            password = st.text_input("🔒 Password", type="password")
+            submit = st.form_submit_button("Login", use_container_width=True)
+            
+            if submit:
+                if email and password:
+                    with st.spinner("Logging in..."):
+                        token, error = cognito_login(email, password)
+                        if token:
+                            st.session_state.authenticated = True
+                            st.session_state.token = token
+                            st.session_state.user_email = email
+                            
+                            # Get credits
+                            credits, user_email, name = get_credits(token)
+                            st.session_state.credits = credits
+                            st.session_state.user_name = name
+                            
+                            st.success("✅ Login successful!")
+                            st.rerun()
+                        else:
+                            st.error(f"❌ {error}")
+                else:
+                    st.warning("Please enter email and password")
+    
+    with tab2:
+        st.subheader("Create New Account")
+        with st.form("register_form"):
+            reg_name = st.text_input("👤 Full Name", placeholder="John Doe")
+            reg_email = st.text_input("📧 Email", placeholder="your@email.com")
+            reg_password = st.text_input("🔒 Password", type="password", help="Min 8 chars, 1 uppercase, 1 number")
+            reg_submit = st.form_submit_button("Register (100 Free Credits)", use_container_width=True)
+            
+            if reg_submit:
+                if reg_name and reg_email and reg_password:
+                    with st.spinner("Registering..."):
+                        result, error = register_user(reg_email, reg_password, reg_name)
+                        if result and not error:
+                            st.success("✅ Registration successful! Check your email for verification code.")
+                            st.info(f"📧 Verification code sent to: {reg_email}")
+                        else:
+                            st.error(f"❌ {error}")
+                else:
+                    st.warning("Please fill all fields")
+    
+    with tab3:
+        st.subheader("Verify Your Email")
+        with st.form("verify_form"):
+            verify_email_input = st.text_input("📧 Email", placeholder="your@email.com")
+            verify_code = st.text_input("🔢 6-Digit Verification Code", placeholder="123456", max_chars=6)
+            verify_submit = st.form_submit_button("Verify Email", use_container_width=True)
+            
+            if verify_submit:
+                if verify_email_input and verify_code:
+                    with st.spinner("Verifying..."):
+                        success, error = verify_email(verify_email_input, verify_code)
+                        if success:
+                            st.success("✅ Email verified! You can now login.")
+                        else:
+                            st.error(f"❌ {error}")
+                else:
+                    st.warning("Please enter email and verification code")
 
 def show_user_profile_sidebar():
-    """Show user profile in sidebar if authenticated"""
-    user_info = get_user_info()
-    
-    if user_info:
-        with st.sidebar:
-            st.markdown("---")
-            if user_info.get('picture'):
-                st.image(user_info['picture'], width=60)
-            st.markdown(f"**{user_info.get('name', 'User')}**")
-            st.caption(user_info.get('email', ''))
-            
-            if st.button("Logout", use_container_width=True):
-                logout()
+    """Show user profile in sidebar"""
+    with st.sidebar:
+        st.markdown("---")
+        st.markdown("### 👤 User Profile")
+        
+        name = st.session_state.get('user_name', 'User')
+        email = st.session_state.get('user_email', '')
+        credits = st.session_state.get('credits', 0)
+        
+        st.write(f"**Name:** {name}")
+        st.write(f"**Email:** {email}")
+        
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    color: white; padding: 1.5rem; border-radius: 15px; text-align: center; margin: 1rem 0;">
+            <h3 style="margin: 0;">Credits</h3>
+            <h1 style="margin: 0.5rem 0;">{credits}</h1>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔄 Refresh", use_container_width=True):
+                token = st.session_state.get('token')
+                if token:
+                    credits, _, _ = get_credits(token)
+                    st.session_state.credits = credits
+                    st.rerun()
+        
+        with col2:
+            if st.button("🚪 Logout", use_container_width=True):
+                st.session_state.authenticated = False
+                st.session_state.token = None
+                st.session_state.credits = 0
+                st.session_state.user_email = None
+                st.session_state.user_name = None
                 st.rerun()
