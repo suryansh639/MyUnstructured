@@ -37,3 +37,5 @@ aws/
 aws
 
 venv/
+landing-page/node_modules/
+landing-page/.next/
