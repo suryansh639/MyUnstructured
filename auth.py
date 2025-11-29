@@ -193,13 +193,35 @@ def show_user_profile_sidebar():
         st.write(f"**Name:** {name}")
         st.write(f"**Email:** {email}")
         
+        # Show different colors based on credit level
+        if credits <= 0:
+            gradient = "linear-gradient(135deg, #f5576c 0%, #f093fb 100%)"
+            warning_msg = "⚠️ No Credits!"
+        elif credits <= 2:
+            gradient = "linear-gradient(135deg, #ffc107 0%, #ff6f00 100%)"
+            warning_msg = "⚠️ Low Credits"
+        else:
+            gradient = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+            warning_msg = ""
+        
         st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+        <div style="background: {gradient}; 
                     color: white; padding: 1.5rem; border-radius: 15px; text-align: center; margin: 1rem 0;">
             <h3 style="margin: 0;">Credits</h3>
             <h1 style="margin: 0.5rem 0;">{credits}</h1>
+            {f'<p style="margin: 0; font-weight: bold;">{warning_msg}</p>' if warning_msg else ''}
         </div>
         """, unsafe_allow_html=True)
+        
+        # Show subscribe button if credits are 0
+        if credits <= 0:
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+                        color: white; padding: 1rem; border-radius: 10px; text-align: center; margin: 1rem 0;">
+                <h4 style="margin: 0;">💎 Subscribe Now!</h4>
+                <p style="margin: 0.5rem 0; font-size: 0.9rem;">Get more credits to continue processing</p>
+            </div>
+            """, unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         with col1:

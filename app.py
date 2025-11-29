@@ -748,57 +748,89 @@ def main():
             
             with col_process:
                 if st.button("🚀 Process Document", type="primary", use_container_width=True):
-                    with st.spinner("🔄 Processing your document..."):
-                        progress_bar = st.progress(0)
-                        status_text = st.empty()
-                        
-                        # Simulate processing steps
-                        steps = [
-                            "📄 Reading document...",
-                            "🔍 Analyzing structure...",
-                            "📝 Extracting text...",
-                            "🏗️ Building elements...",
-                            "✨ Applying enhancements...",
-                            "✅ Finalizing results..."
-                        ]
-                        
-                        for i, step in enumerate(steps):
-                            status_text.text(step)
-                            progress_bar.progress((i + 1) / len(steps))
-                            time.sleep(0.5)
-                        
-                        elements = process_document(uploaded_file, processing_options)
-                        
-                        if elements:
-                            st.session_state.processed_elements = elements
+                    # Check credits first
+                    current_credits = st.session_state.get('credits', 0)
+                    
+                    if current_credits <= 0:
+                        st.error("❌ No credits remaining!")
+                        st.warning("🔔 Please subscribe to get more credits and continue processing documents.")
+                        st.markdown("""
+                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+                                    color: white; padding: 2rem; border-radius: 15px; text-align: center; margin: 1rem 0;">
+                            <h3>💎 Subscribe for More Credits</h3>
+                            <p>Get unlimited document processing with our premium plans!</p>
+                            <p><strong>Contact us to upgrade your account</strong></p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        with st.spinner("🔄 Processing your document..."):
+                            progress_bar = st.progress(0)
+                            status_text = st.empty()
                             
-                            # Add to history
-                            st.session_state.processing_history.append({
-                                'filename': uploaded_file.name,
-                                'timestamp': datetime.now().isoformat(),
-                                'elements_count': len(elements),
-                                'strategy': processing_options['strategy']
-                            })
+                            # Simulate processing steps
+                            steps = [
+                                "📄 Reading document...",
+                                "🔍 Analyzing structure...",
+                                "📝 Extracting text...",
+                                "🏗️ Building elements...",
+                                "✨ Applying enhancements...",
+                                "✅ Finalizing results..."
+                            ]
                             
-                            # Apply schema or create standard output
-                            if st.session_state.schema_fields:
-                                schema_output = apply_custom_schema(elements, st.session_state.schema_fields)
-                                if schema_output:
-                                    st.session_state.final_json = schema_output
-                            else:
-                                standard_output = {
-                                    "metadata": {
-                                        "total_elements": len(elements),
-                                        "processing_timestamp": pd.Timestamp.now().isoformat(),
-                                        "filename": uploaded_file.name,
-                                        "processing_options": processing_options
-                                    },
-                                    "elements": [element.to_dict() for element in elements]
-                                }
-                                st.session_state.final_json = standard_output
+                            for i, step in enumerate(steps):
+                                status_text.text(step)
+                                progress_bar.progress((i + 1) / len(steps))
+                                time.sleep(0.3)
                             
-                            st.success("🎉 Document processed successfully!")
-                            st.balloons()
+                            elements = process_document(uploaded_file, processing_options)
+                            
+                            if elements:
+                                # Deduct credit via API
+                                from auth import process_document_with_credit
+                                token = st.session_state.get('token')
+                                
+                                if token:
+                                    # Call API to deduct credit
+                                    uploaded_file.seek(0)  # Reset file pointer
+                                    api_result, api_error = process_document_with_credit(
+                                        token, 
+                                        uploaded_file.read(), 
+                                        uploaded_file.name
+                                    )
+                                    
+                                    if api_result and 'credits_remaining' in api_result:
+                                        st.session_state.credits = api_result['credits_remaining']
+                                        st.info(f"💳 Credit used! Remaining credits: {api_result['credits_remaining']}")
+                                
+                                st.session_state.processed_elements = elements
+                                
+                                # Add to history
+                                st.session_state.processing_history.append({
+                                    'filename': uploaded_file.name,
+                                    'timestamp': datetime.now().isoformat(),
+                                    'elements_count': len(elements),
+                                    'strategy': processing_options['strategy']
+                                })
+                                
+                                # Apply schema or create standard output
+                                if st.session_state.schema_fields:
+                                    schema_output = apply_custom_schema(elements, st.session_state.schema_fields)
+                                    if schema_output:
+                                        st.session_state.final_json = schema_output
+                                else:
+                                    standard_output = {
+                                        "metadata": {
+                                            "total_elements": len(elements),
+                                            "processing_timestamp": pd.Timestamp.now().isoformat(),
+                                            "filename": uploaded_file.name,
+                                            "processing_options": processing_options
+                                        },
+                                        "elements": [element.to_dict() for element in elements]
+                                    }
+                                    st.session_state.final_json = standard_output
+                                
+                                st.success("🎉 Document processed successfully!")
+                                st.balloons()
             
             with col_info:
                 st.markdown("### 📋 Processing Options Summary")
