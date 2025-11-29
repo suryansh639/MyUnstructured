@@ -1,7 +1,34 @@
 streamlit
-streamlit_google_auth
-plotly
+unstructured[all-docs]
 pandas
+python-multipart
+pillow
+pypdf
+python-docx
+openpyxl
+python-pptx
+markdown
+lxml
+beautifulsoup4
+
+# For better PDF processing
+layoutparser
+torch
+torchvision
+
+# Additional dependencies for various file formats
+tabulate
+plotly>=5.15.0     # For interactive charts
+openpyxl
+xlsxwriter         # For Excel export
+pytesseract
+opencv-python      # For advanced OCR
+torch
+torchvision        # For ML models
+pdfplumber
+
+PyPDF2
+
 requests
-boto3
-plotly
+
+python-dateutil
