@@ -1,5 +1,7 @@
 # Core
 streamlit
+streamlit_google_auth
+plotly
 pandas
 requests
 python-dateutil
