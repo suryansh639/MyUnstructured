@@ -1,8 +1,8 @@
+# Core
 streamlit
 pandas
 requests
 python-dateutil
-python-multipart
 
 # Unstructured
 unstructured
@@ -18,7 +18,6 @@ pillow
 
 # Document Handling
 pypdf
-PyPDF2
 python-docx
 python-pptx
 openpyxl
@@ -28,7 +27,6 @@ lxml
 beautifulsoup4
 pdfplumber
 tabulate
-plotly>=5.15.0
 PyPDF2
 
 # ML Frameworks
